@@ -9,10 +9,21 @@ export async function POST(request) {
         console.log('Login API called');
         console.log('Environment check:', {
             hasMongoURI: !!process.env.MONGODB_URI,
+            mongoURILength: process.env.MONGODB_URI?.length,
             hasJWTSecret: !!process.env.JWT_SECRET,
             nodeEnv: process.env.NODE_ENV,
-            isVercel: !!process.env.VERCEL
+            isVercel: !!process.env.VERCEL,
+            vercelURL: process.env.VERCEL_URL
         });
+
+        // Check MongoDB URI
+        if (!process.env.MONGODB_URI) {
+            console.error('MONGODB_URI is not defined');
+            return NextResponse.json(
+                { error: "Database configuration error. Please check server logs." },
+                { status: 500 }
+            );
+        }
 
         await connectDB();
         console.log('Database connected successfully');

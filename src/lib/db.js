@@ -16,10 +16,15 @@ async function connectDB() {
   // For Vercel, always return fresh connection to avoid edge function limitations
   if (process.env.VERCEL) {
     try {
+      // Close existing connections if any
+      if (mongoose.connection.readyState === 1) {
+        await mongoose.connection.close();
+      }
+      
       const connection = await mongoose.connect(MONGODB_URI, {
         bufferCommands: false,
         maxPoolSize: 10,
-        serverSelectionTimeoutMS: 5000,
+        serverSelectionTimeoutMS: 10000, // Increased timeout
         socketTimeoutMS: 45000,
       });
       console.log('MongoDB connected on Vercel');
