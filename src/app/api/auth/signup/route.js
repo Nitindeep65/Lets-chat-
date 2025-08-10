@@ -3,18 +3,34 @@ import connectDB from '@/lib/db';
 import User from '@/models/User';
 import bcrypt from 'bcryptjs';
 
-export async function POST(request) {
-  try {
-    console.log('Signup API called');
-    console.log('Environment check:', {
-      hasMongoURI: !!process.env.MONGODB_URI,
-      nodeEnv: process.env.NODE_ENV,
-      isVercel: !!process.env.VERCEL
-    });
+// Handle OPTIONS request for CORS
+export async function OPTIONS(request) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
+}
 
-    // Connect to database
+export async function POST(request) {
+  console.log('Signup API called');
+  
+  // Check environment variables first
+  if (!process.env.MONGODB_URI) {
+    console.error('MONGODB_URI not configured');
+    return NextResponse.json(
+      { error: 'Server configuration error' },
+      { status: 500 }
+    );
+  }
+
+  try {
+    // Connect to database with timeout handling
     await connectDB();
-    console.log('Database connected successfully');
+    console.log('Database connected');
     
     // Get request body
     const { name, email, password } = await request.json();
@@ -44,8 +60,8 @@ export async function POST(request) {
       );
     }
     
-    // Hash password
-    const saltRounds = 12;
+    // Hash password with lower cost for faster execution
+    const saltRounds = 10; // Reduced from 12 for faster execution
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     
     // Create new user

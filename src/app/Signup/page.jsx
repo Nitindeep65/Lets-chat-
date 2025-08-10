@@ -29,34 +29,47 @@ export default function SignupPage() {
     e.preventDefault();
     setIsSubmitting(true);
     setErrors({});
-  try{
-    const response  = await fetch('/api/auth/signup',{ 
-      method : 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body : JSON.stringify(form)
-
-    });
-    const data = await response.json();
-
-    if(response.ok){
-      alert('Account crested succesfully ');
-      setForm({
-        name:'',
-        email:'',
-        password:'',
+    
+    try{
+      const response = await fetch('/api/auth/signup',{ 
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(form)
       });
-      window.location.href = '/Login';
-    }else{
-      if(data.error){
-        alert('something went wrong');
+      
+      // Check if response is JSON
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Server error - please try again later");
       }
+      
+      const data = await response.json();
+
+      if(response.ok){
+        alert('Account created successfully!');
+        setForm({
+          name:'',
+          email:'',
+          password:'',
+        });
+        window.location.href = '/Login';
+      }else{
+        if(data.error){
+          alert(data.error);
+        } else {
+          alert('Signup failed. Please try again.');
+        }
+      }
+    }catch(error){
+      console.error('Signup error:', error);
+      if (error.message === "Failed to fetch") {
+        alert('Network error. Please check your connection and try again.');
+      } else {
+        alert('An error occurred. Please try again later.');
+      }
+    }finally{
+      setIsSubmitting(false);
     }
-  }catch(error){
-    console.error('signup error :',error);
-    alert('hua ho ga kucgh ');
-  }finally{
-    setIsSubmitting(false);
-  }
   };
   useEffect(() => {
     const savedMode = localStorage.getItem('darkMode');

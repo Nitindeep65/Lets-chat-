@@ -13,56 +13,25 @@ if (!cached) {
 }
 
 async function connectDB() {
-  // For Vercel, always return fresh connection to avoid edge function limitations
-  if (process.env.VERCEL) {
-    try {
-      // Close existing connections if any
-      if (mongoose.connection.readyState === 1) {
-        await mongoose.connection.close();
-      }
-      
-      const connection = await mongoose.connect(MONGODB_URI, {
-        bufferCommands: false,
-        maxPoolSize: 10,
-        serverSelectionTimeoutMS: 10000, // Increased timeout
-        socketTimeoutMS: 45000,
-      });
-      console.log('MongoDB connected on Vercel');
-      return connection;
-    } catch (error) {
-      console.error('MongoDB connection error on Vercel:', error);
-      throw error;
-    }
-  }
-
-  // For local development, use caching
-  if (cached.conn) {
-    return cached.conn;
-  }
-
-  if (!cached.promise) {
-    const opts = {
-      bufferCommands: false,
-      maxPoolSize: 10,
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
-    };
-
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
-      console.log('MongoDB connected locally');
-      return mongoose;
-    });
+  // Check if already connected
+  if (mongoose.connections[0].readyState) {
+    console.log('Using existing MongoDB connection');
+    return;
   }
 
   try {
-    cached.conn = await cached.promise;
-  } catch (e) {
-    cached.promise = null;
-    console.error('MongoDB connection error:', e);
-    throw e;
+    const opts = {
+      bufferCommands: false,
+    };
+
+    console.log('Attempting MongoDB connection...');
+    await mongoose.connect(MONGODB_URI, opts);
+    console.log('MongoDB connected successfully');
+  } catch (error) {
+    console.error('MongoDB connection error:', error.message);
+    throw new Error(`Failed to connect to MongoDB: ${error.message}`);
   }
 
-  return cached.conn;
 }
 
 export default connectDB;
