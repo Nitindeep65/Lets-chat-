@@ -1,0 +1,16 @@
+# Vercelignore - Files to ignore during deployment
+.env.local
+.env
+node_modules
+.next
+*.log
+.git
+.gitignore
+README.md
+
+# Ensure no socket files are deployed
+**/socket/**
+**/socket.js
+src/lib/socket.js
+src/app/api/socket/
+server.js

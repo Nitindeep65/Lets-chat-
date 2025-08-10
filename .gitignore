@@ -36,6 +36,13 @@ yarn-error.log*
 # vercel
 .vercel
 
+# Socket.IO files (ensure these are never committed)
+**/socket/**
+**/socket.js
+src/lib/socket.js
+src/app/api/socket/
+server.js
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
