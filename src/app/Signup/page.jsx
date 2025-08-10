@@ -143,12 +143,13 @@ export default function SignupPage() {
                 name='name'
                 value={form.name}
                 onChange={handleInputChange}
+                autoComplete="name"
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 transition-colors ${
                   isDarkMode 
                     ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
                     : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
                 }`}
-                placeholder="Enter your email"
+                placeholder="Enter your name"
               />
             </div>
 
@@ -161,6 +162,7 @@ export default function SignupPage() {
                 name='email'
                 value={form.email}
                 onChange={handleInputChange}
+                autoComplete="email"
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 transition-colors ${
                   isDarkMode 
                     ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
@@ -179,6 +181,7 @@ export default function SignupPage() {
                 name='password'
                 value={form.password}
                 onChange={handleInputChange}
+                autoComplete="new-password"
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 transition-colors ${
                   isDarkMode 
                     ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 

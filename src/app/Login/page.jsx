@@ -195,6 +195,7 @@ export default function LoginPage() {
                   value={form.email}
                   onChange={handleInputChange}
                   required
+                  autoComplete="email"
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 transition-colors ${
                     isDarkMode 
                       ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
@@ -220,6 +221,7 @@ export default function LoginPage() {
                     onChange={handleInputChange}
                     required
                     minLength={6}
+                    autoComplete="current-password"
                     className={`w-full px-3 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 transition-colors ${
                       isDarkMode 
                         ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
