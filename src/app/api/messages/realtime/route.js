@@ -9,6 +9,8 @@ export async function GET(request) {
     const lastMessageId = searchParams.get('lastMessageId');
     const otherUserId = searchParams.get('userId');
     
+    console.log('Real-time API called:', { lastMessageId, otherUserId });
+    
     if (!otherUserId) {
       return NextResponse.json({ error: 'User ID required' }, { status: 400 });
     }
@@ -21,6 +23,8 @@ export async function GET(request) {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const currentUserId = decoded.userId;
+
+    console.log('Real-time request from:', currentUserId, 'to:', otherUserId);
 
     await connectDB();
 
@@ -37,10 +41,13 @@ export async function GET(request) {
       try {
         const { ObjectId } = require('mongodb');
         query._id = { $gt: new ObjectId(lastMessageId) };
+        console.log('Looking for messages after:', lastMessageId);
       } catch (err) {
         // If lastMessageId is invalid, get all messages
         console.warn('Invalid lastMessageId:', lastMessageId);
       }
+    } else {
+      console.log('Getting all messages (initial load)');
     }
 
     const messages = await Message.find(query)
@@ -50,6 +57,8 @@ export async function GET(request) {
       .populate('receiverId', 'name email');
 
     const hasNewMessages = lastMessageId ? messages.length > 0 : false;
+    
+    console.log('Found messages:', messages.length, 'hasNewMessages:', hasNewMessages);
 
     return NextResponse.json({
       success: true,
@@ -57,7 +66,8 @@ export async function GET(request) {
       hasNewMessages,
       currentUserId,
       otherUserId,
-      messageCount: messages.length
+      messageCount: messages.length,
+      query: lastMessageId ? 'new_messages' : 'initial_load'
     });
 
   } catch (error) {

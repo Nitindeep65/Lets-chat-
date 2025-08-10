@@ -1,12 +1,12 @@
 import mongoose from 'mongoose';
 
 const MessageSchema = new mongoose.Schema({
-  sender: {
+  senderId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
-  receiver: {
+  receiverId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
@@ -34,7 +34,7 @@ const MessageSchema = new mongoose.Schema({
 });
 
 // Index for efficient queries
-MessageSchema.index({ sender: 1, receiver: 1, createdAt: -1 });
+MessageSchema.index({ senderId: 1, receiverId: 1, createdAt: -1 });
 
 // Prevent re-compilation during development
 export default mongoose.models.Message || mongoose.model('Message', MessageSchema);

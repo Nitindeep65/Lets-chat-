@@ -9,21 +9,33 @@ export const useRealTimeMessages = (selectedUserId) => {
   const intervalRef = useRef(null);
   const lastMessageIdRef = useRef(null);
 
+  // Debug function
+  const debugLog = (message, data = null) => {
+    console.log(`[RealTime] ${message}`, data || '');
+  };
+
   // Polling for new messages
   useEffect(() => {
     if (!selectedUserId) {
+      debugLog('No selectedUserId, clearing interval');
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
       setMessages([]);
+      lastMessageIdRef.current = null;
       return;
     }
+
+    debugLog('Starting real-time polling for user:', selectedUserId);
 
     const pollForMessages = async () => {
       try {
         const token = localStorage.getItem('token');
-        if (!token) return;
+        if (!token) {
+          debugLog('No token found');
+          return;
+        }
 
         const params = new URLSearchParams({
           userId: selectedUserId
@@ -32,6 +44,9 @@ export const useRealTimeMessages = (selectedUserId) => {
         // For new messages only, add lastMessageId
         if (lastMessageIdRef.current) {
           params.append('lastMessageId', lastMessageIdRef.current);
+          debugLog('Polling for new messages after:', lastMessageIdRef.current);
+        } else {
+          debugLog('Initial load for all messages');
         }
 
         const response = await fetch(`/api/messages/realtime?${params}`, {
@@ -42,10 +57,17 @@ export const useRealTimeMessages = (selectedUserId) => {
 
         if (response.ok) {
           const data = await response.json();
+          debugLog('API Response:', { 
+            messageCount: data.messages?.length || 0, 
+            hasNewMessages: data.hasNewMessages,
+            currentUserId: data.currentUserId,
+            otherUserId: data.otherUserId
+          });
           
           if (lastMessageIdRef.current) {
             // If we have a lastMessageId, these are new messages
             if (data.hasNewMessages && data.messages.length > 0) {
+              debugLog('Adding new messages:', data.messages.length);
               setMessages(prev => {
                 const newMessages = data.messages.filter(msg => 
                   !prev.some(existingMsg => existingMsg._id === msg._id)
@@ -53,6 +75,7 @@ export const useRealTimeMessages = (selectedUserId) => {
                 
                 if (newMessages.length > 0) {
                   lastMessageIdRef.current = newMessages[newMessages.length - 1]._id;
+                  debugLog('Updated lastMessageId to:', lastMessageIdRef.current);
                   return [...prev, ...newMessages];
                 }
                 
@@ -62,17 +85,23 @@ export const useRealTimeMessages = (selectedUserId) => {
           } else {
             // Initial load - set all messages
             if (data.messages.length > 0) {
+              debugLog('Initial load - setting messages:', data.messages.length);
               setMessages(data.messages);
               lastMessageIdRef.current = data.messages[data.messages.length - 1]._id;
+              debugLog('Set lastMessageId to:', lastMessageIdRef.current);
+            } else {
+              debugLog('No messages found for initial load');
+              setMessages([]);
             }
           }
           
           setIsConnected(true);
         } else {
+          debugLog('API Error:', response.status);
           setIsConnected(false);
         }
       } catch (error) {
-        console.error('Polling error:', error);
+        debugLog('Polling error:', error.message);
         setIsConnected(false);
       }
     };
@@ -80,10 +109,11 @@ export const useRealTimeMessages = (selectedUserId) => {
     // Initial load
     pollForMessages();
 
-    // Set up polling interval (every 1 second for better real-time feel)
-    intervalRef.current = setInterval(pollForMessages, 1000);
+    // Set up polling interval (every 2 seconds for debugging)
+    intervalRef.current = setInterval(pollForMessages, 2000);
 
     return () => {
+      debugLog('Cleaning up polling for user:', selectedUserId);
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -98,6 +128,9 @@ export const useRealTimeMessages = (selectedUserId) => {
   }, [selectedUserId]);
 
   const sendMessage = async (receiverId, content) => {
+    debugLog('Sending message to:', receiverId);
+    debugLog('Message content:', content);
+    
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('/api/messages', {
@@ -114,27 +147,32 @@ export const useRealTimeMessages = (selectedUserId) => {
       
       if (response.ok) {
         const data = await response.json();
+        debugLog('Message sent successfully:', data.message._id);
         
         // Add message immediately to local state for sender
         const newMessage = data.message;
         setMessages(prev => {
           // Check if message already exists
           if (prev.some(msg => msg._id === newMessage._id)) {
+            debugLog('Message already exists in local state');
             return prev;
           }
+          debugLog('Adding message to local state');
           return [...prev, newMessage];
         });
         
         // Update last message ID to include this new message
         lastMessageIdRef.current = newMessage._id;
+        debugLog('Updated lastMessageId after send:', lastMessageIdRef.current);
         
         return { success: true, message: newMessage };
       } else {
         const errorData = await response.json();
+        debugLog('Send message error:', errorData);
         return { success: false, error: errorData.error || 'Failed to send message' };
       }
     } catch (error) {
-      console.error('Error sending message:', error);
+      debugLog('Network error sending message:', error.message);
       return { success: false, error: 'Network error sending message' };
     }
   };

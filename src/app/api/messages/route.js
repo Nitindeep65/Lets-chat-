@@ -53,8 +53,8 @@ export async function POST(request) {
     
     // Create message
     const message = new Message({
-      sender: decoded.userId,
-      receiver: receiverId,
+      senderId: decoded.userId,
+      receiverId: receiverId,
       content: content.trim(),
       messageType: 'text'
     });
@@ -63,7 +63,7 @@ export async function POST(request) {
     console.log('Message saved:', message._id);
     
     // Populate sender and receiver info
-    await message.populate('sender receiver', 'name email');
+    await message.populate('senderId receiverId', 'name email');
     
     // TODO: Fix Chat update - temporarily disabled due to MongoDB error
     /*
@@ -139,11 +139,11 @@ export async function GET(request) {
     // Get messages between current user and other user
     const messages = await Message.find({
       $or: [
-        { sender: decoded.userId, receiver: otherUserId },
-        { sender: otherUserId, receiver: decoded.userId }
+        { senderId: decoded.userId, receiverId: otherUserId },
+        { senderId: otherUserId, receiverId: decoded.userId }
       ]
     })
-    .populate('sender receiver', 'name email')
+    .populate('senderId receiverId', 'name email')
     .sort({ createdAt: 1 })
     .limit(limit);
     
@@ -152,8 +152,8 @@ export async function GET(request) {
     // Mark messages as read if they were sent to current user
     await Message.updateMany(
       {
-        sender: otherUserId,
-        receiver: decoded.userId,
+        senderId: otherUserId,
+        receiverId: decoded.userId,
         isRead: false
       },
       {
