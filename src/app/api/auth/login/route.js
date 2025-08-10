@@ -6,13 +6,24 @@ import jwt from "jsonwebtoken";
 
 export async function POST(request) {
     try {
+        console.log('Login API called');
+        console.log('Environment check:', {
+            hasMongoURI: !!process.env.MONGODB_URI,
+            hasJWTSecret: !!process.env.JWT_SECRET,
+            nodeEnv: process.env.NODE_ENV,
+            isVercel: !!process.env.VERCEL
+        });
+
         await connectDB();
+        console.log('Database connected successfully');
+        
         const { email, password } = await request.json();
+        console.log('Login attempt for email:', email);
 
         // Validation
         if (!email || !password) {
             return NextResponse.json(
-                { error: "Email and password are required" }, // Fixed: specific error message
+                { error: "Email and password are required" },
                 { status: 400 }
             );
         }
@@ -26,12 +37,13 @@ export async function POST(request) {
             );
         }
 
-        // Find user with password field (since it's select: false by default)
-        const user = await User.findOne({ email: email.toLowerCase() }).select('+password'); // Fixed: toLowerCase() and +password
+        // Find user with password field
+        const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
         
         if (!user) {
+            console.log('User not found for email:', email);
             return NextResponse.json(
-                { error: "Invalid email or password" }, // Fixed: don't reveal which field is wrong
+                { error: "Invalid email or password" },
                 { status: 401 }
             );
         }
@@ -39,8 +51,9 @@ export async function POST(request) {
         // Compare password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
+            console.log('Password mismatch for user:', email);
             return NextResponse.json(
-                { error: "Invalid email or password" }, // Fixed: consistent error message
+                { error: "Invalid email or password" },
                 { status: 401 }
             );
         }
@@ -53,16 +66,18 @@ export async function POST(request) {
 
         // Generate JWT
         const token = jwt.sign(
-            { userId: user._id, email: user.email }, // Fixed: use userId for consistency
+            { userId: user._id, email: user.email },
             process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
+
+        console.log('Login successful for user:', email);
 
         // Create response with token in BOTH cookie AND body
         const response = NextResponse.json({
             success: true,
             message: 'Login successful',
-            token: token, // Fixed: include token in response body for frontend
+            token: token,
             user: {
                 id: user._id,
                 name: user.name,
@@ -83,9 +98,16 @@ export async function POST(request) {
         return response;
 
     } catch (error) {
-        console.error('Login error:', error);
+        console.error('Login error details:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+        });
         return NextResponse.json(
-            { error: 'Internal server error' },
+            { 
+                error: 'Internal server error',
+                details: process.env.NODE_ENV === 'development' ? error.message : undefined
+            },
             { status: 500 }
         );
     }

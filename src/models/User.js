@@ -36,4 +36,7 @@ const UserSchema = new mongoose.Schema({
   timestamps: true
 });
 
-export default mongoose.models.User || mongoose.model('User', UserSchema);
+// Prevent re-compilation error in Vercel
+delete mongoose.models.User;
+
+export default mongoose.model('User', UserSchema);
