@@ -69,14 +69,18 @@ export const useRealTimeMessages = (selectedUserId) => {
             if (data.hasNewMessages && data.messages.length > 0) {
               debugLog('Adding new messages:', data.messages.length);
               setMessages(prev => {
-                const newMessages = data.messages.filter(msg => 
+                // Filter out invalid messages and duplicates
+                const validNewMessages = data.messages.filter(msg => 
+                  msg && 
+                  msg._id && 
+                  msg.content &&
                   !prev.some(existingMsg => existingMsg._id === msg._id)
                 );
                 
-                if (newMessages.length > 0) {
-                  lastMessageIdRef.current = newMessages[newMessages.length - 1]._id;
+                if (validNewMessages.length > 0) {
+                  lastMessageIdRef.current = validNewMessages[validNewMessages.length - 1]._id;
                   debugLog('Updated lastMessageId to:', lastMessageIdRef.current);
-                  return [...prev, ...newMessages];
+                  return [...prev, ...validNewMessages];
                 }
                 
                 return prev;
@@ -86,9 +90,18 @@ export const useRealTimeMessages = (selectedUserId) => {
             // Initial load - set all messages
             if (data.messages.length > 0) {
               debugLog('Initial load - setting messages:', data.messages.length);
-              setMessages(data.messages);
-              lastMessageIdRef.current = data.messages[data.messages.length - 1]._id;
-              debugLog('Set lastMessageId to:', lastMessageIdRef.current);
+              // Filter out invalid messages
+              const validMessages = data.messages.filter(msg => msg && msg._id && msg.content);
+              debugLog('Valid messages after filtering:', validMessages.length);
+              
+              if (validMessages.length > 0) {
+                setMessages(validMessages);
+                lastMessageIdRef.current = validMessages[validMessages.length - 1]._id;
+                debugLog('Set lastMessageId to:', lastMessageIdRef.current);
+              } else {
+                debugLog('No valid messages found for initial load');
+                setMessages([]);
+              }
             } else {
               debugLog('No messages found for initial load');
               setMessages([]);
@@ -151,19 +164,25 @@ export const useRealTimeMessages = (selectedUserId) => {
         
         // Add message immediately to local state for sender
         const newMessage = data.message;
-        setMessages(prev => {
-          // Check if message already exists
-          if (prev.some(msg => msg._id === newMessage._id)) {
-            debugLog('Message already exists in local state');
-            return prev;
-          }
-          debugLog('Adding message to local state');
-          return [...prev, newMessage];
-        });
         
-        // Update last message ID to include this new message
-        lastMessageIdRef.current = newMessage._id;
-        debugLog('Updated lastMessageId after send:', lastMessageIdRef.current);
+        // Validate message before adding
+        if (newMessage && newMessage._id && newMessage.content) {
+          setMessages(prev => {
+            // Check if message already exists
+            if (prev.some(msg => msg._id === newMessage._id)) {
+              debugLog('Message already exists in local state');
+              return prev;
+            }
+            debugLog('Adding message to local state');
+            return [...prev, newMessage];
+          });
+          
+          // Update last message ID to include this new message
+          lastMessageIdRef.current = newMessage._id;
+          debugLog('Updated lastMessageId after send:', lastMessageIdRef.current);
+        } else {
+          debugLog('Invalid message received from server:', newMessage);
+        }
         
         return { success: true, message: newMessage };
       } else {
