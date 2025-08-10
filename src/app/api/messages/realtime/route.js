@@ -9,6 +9,10 @@ export async function GET(request) {
     const lastMessageId = searchParams.get('lastMessageId');
     const otherUserId = searchParams.get('userId');
     
+    if (!otherUserId) {
+      return NextResponse.json({ error: 'User ID required' }, { status: 400 });
+    }
+    
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json({ error: 'No token provided' }, { status: 401 });
@@ -20,7 +24,7 @@ export async function GET(request) {
 
     await connectDB();
 
-    // Build query to get new messages
+    // Build query to get messages between the two users
     const query = {
       $or: [
         { senderId: currentUserId, receiverId: otherUserId },
@@ -30,7 +34,13 @@ export async function GET(request) {
 
     // If lastMessageId is provided, only get newer messages
     if (lastMessageId) {
-      query._id = { $gt: lastMessageId };
+      try {
+        const { ObjectId } = require('mongodb');
+        query._id = { $gt: new ObjectId(lastMessageId) };
+      } catch (err) {
+        // If lastMessageId is invalid, get all messages
+        console.warn('Invalid lastMessageId:', lastMessageId);
+      }
     }
 
     const messages = await Message.find(query)
@@ -39,10 +49,15 @@ export async function GET(request) {
       .populate('senderId', 'name email')
       .populate('receiverId', 'name email');
 
+    const hasNewMessages = lastMessageId ? messages.length > 0 : false;
+
     return NextResponse.json({
       success: true,
       messages: messages || [],
-      hasNewMessages: messages.length > 0
+      hasNewMessages,
+      currentUserId,
+      otherUserId,
+      messageCount: messages.length
     });
 
   } catch (error) {

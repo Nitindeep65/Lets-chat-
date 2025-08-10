@@ -36,8 +36,8 @@ export default function Dashboard() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Use real-time messages when available, otherwise fall back to loaded messages
-  const displayMessages = selectedChat ? realtimeMessages : messages;
+  // Use real-time messages when chat is selected, otherwise show empty
+  const displayMessages = selectedChat ? realtimeMessages : [];
 
   useEffect(() => {
     scrollToBottom();
