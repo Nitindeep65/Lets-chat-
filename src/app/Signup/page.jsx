@@ -9,17 +9,55 @@ export default function SignupPage() {
   })
   const [isDarkMode, setIsDarkMode] = useState(false);
   const[isSubmitting , setIsSubmitting]=useState(false);
+  const [errors , setErrors]= useState({});
 
-  const handleInputChange = (e)=>{
-    const {name , value} = e.target;
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
     setForm(prev => ({
-        ...prev,
-        [name]:value
+      ...prev,
+      [name]: value
     }));
+   if (errors[name]){
+    setErrors(prev => ({
+      ...prev,
+      [name]:''
+    }));
+   }
+  };
+
+  const handleSubmit = async(e)=>{
+    e.preventDefault();
+    setIsSubmitting(true);
+    setErrors({});
+  try{
+    const response  = await fetch('/api/auth/signup',{ 
+      method : 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body : JSON.stringify(form)
+
+    });
+    const data = await response.json();
+
+    if(response.ok){
+      alert('Account crested succesfully ');
+      setForm({
+        name:'',
+        email:'',
+        password:'',
+      });
+      window.location.href = '/Login';
+    }else{
+      if(data.error){
+        alert('something went wrong');
+      }
+    }
+  }catch(error){
+    console.error('signup error :',error);
+    alert('hua ho ga kucgh ');
+  }finally{
+    setIsSubmitting(false);
   }
-
-
-
+  };
   useEffect(() => {
     const savedMode = localStorage.getItem('darkMode');
     const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -95,7 +133,7 @@ export default function SignupPage() {
             <p className={`text-center mb-4 ${
               isDarkMode ? 'text-gray-300' : 'text-gray-600'
             }`}> Signup Here For Your New Account </p>
-          <form className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
              <div>
               <label className={`block text-sm font-medium mb-1 ${
                 isDarkMode ? 'text-gray-300' : 'text-gray-700'
@@ -145,13 +183,16 @@ export default function SignupPage() {
                   isDarkMode 
                     ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
                     : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-                }`}
+                }
+                ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}
+                `}
                 placeholder="Enter your password"
               />
             </div>
             
             <button 
               type="submit"
+              disabled={isSubmitting}
               className={`w-full py-2 px-4 rounded-md font-medium transition-colors ${
                 isDarkMode
                   ? 'bg-pink-600 hover:bg-pink-700 text-white'
@@ -182,4 +223,3 @@ export default function SignupPage() {
     </div>
   )
 }
-
