@@ -65,6 +65,8 @@ export async function POST(request) {
     // Populate sender and receiver info
     await message.populate('sender receiver', 'name email');
     
+    // TODO: Fix Chat update - temporarily disabled due to MongoDB error
+    /*
     // Update or create chat
     const chat = await Chat.findOneAndUpdate(
       { 
@@ -73,14 +75,19 @@ export async function POST(request) {
         } 
       },
       {
-        participants: [decoded.userId, receiverId],
-        lastMessage: message._id,
-        lastMessageAt: new Date()
+        $set: {
+          lastMessage: message._id,
+          lastMessageAt: new Date()
+        },
+        $setOnInsert: {
+          participants: [decoded.userId, receiverId]
+        }
       },
       { upsert: true, new: true }
     );
     
     console.log('Chat updated:', chat._id);
+    */
     
     return NextResponse.json({ 
       success: true, 

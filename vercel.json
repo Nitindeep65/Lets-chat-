@@ -3,5 +3,11 @@
     "src/app/api/**/*.js": {
       "maxDuration": 30
     }
+  },
+  "regions": ["iad1"],
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_APP_URL": "https://your-app-name.vercel.app"
+    }
   }
 }
